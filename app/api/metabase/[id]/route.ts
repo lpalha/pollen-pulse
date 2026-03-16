@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -15,13 +15,27 @@ export async function GET(
     );
   }
 
+  // Support ?granularity=week|month for template-tag questions
+  const granularity = req.nextUrl.searchParams.get("granularity");
+
+  const queryBody: Record<string, unknown> = {};
+  if (granularity) {
+    queryBody.parameters = [
+      {
+        type: "category",
+        target: ["variable", ["template-tag", "granularity"]],
+        value: granularity,
+      },
+    ];
+  }
+
   const res = await fetch(`${base}/api/card/${id}/query`, {
     method: "POST",
     headers: {
       "X-API-Key": apiKey,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({}),
+    body: JSON.stringify(queryBody),
   });
 
   if (!res.ok) {
