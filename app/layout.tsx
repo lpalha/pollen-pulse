@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import Sidebar from "./components/Sidebar";
 
 const avantt = localFont({
   src: "../public/fonts/Avantt-Regular.otf",
@@ -21,11 +20,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${avantt.variable} font-sans antialiased`} style={{ background: "#F5F1EA" }}>
-        <Sidebar />
-        <div className="pl-56 min-h-screen">
-          {children}
-        </div>
+      <body className={`${avantt.variable} font-sans antialiased min-h-screen`} style={{ background: "#F5F1EA" }}>
+        {children}
       </body>
     </html>
   );

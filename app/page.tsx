@@ -8,7 +8,14 @@ export default function DashboardPage() {
         className="h-14 flex items-center justify-between px-8"
         style={{ borderBottom: "1px solid rgba(7,41,14,0.1)", background: "#F5F1EA" }}
       >
-        <h1 className="text-sm font-semibold" style={{ color: "#07290E" }}>Dashboard</h1>
+        <div className="flex items-center gap-3">
+          <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#AACC00" }}>
+            <svg className="w-3.5 h-3.5" fill="none" stroke="#07290E" strokeWidth={2.2} viewBox="0 0 24 24">
+              <path d="M12 2v10m0 0l-3-3m3 3l3-3M3 17l3 2 3-2 3 2 3-2 3 2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <span className="text-sm font-semibold" style={{ color: "#07290E" }}>Pulse</span>
+        </div>
         <div
           className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium"
           style={{ background: "rgba(7,41,14,0.06)", color: "#07290E" }}
