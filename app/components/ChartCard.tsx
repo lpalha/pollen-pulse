@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, Title, Text } from "@tremor/react";
 import {
   AreaChart,
   Area,
@@ -10,7 +9,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
+  TooltipProps,
 } from "recharts";
 
 interface ChartConfig {
@@ -41,7 +40,6 @@ function transformMetabaseData(raw: {
         obj[col.name] = date.toLocaleDateString("en-GB", {
           day: "2-digit",
           month: "short",
-          year: "numeric",
         });
       } else {
         obj[col.name] = val;
@@ -49,6 +47,23 @@ function transformMetabaseData(raw: {
     });
     return obj;
   });
+}
+
+function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg shadow-lg px-3 py-2.5 text-sm">
+      <p className="text-gray-500 mb-1 text-xs font-medium">{label}</p>
+      {payload.map((entry) => (
+        <p key={entry.name} className="font-semibold text-gray-900">
+          {entry.name}:{" "}
+          <span style={{ color: entry.color }}>
+            {typeof entry.value === "number" ? entry.value.toLocaleString() : entry.value}
+          </span>
+        </p>
+      ))}
+    </div>
+  );
 }
 
 export default function ChartCard({
@@ -79,56 +94,68 @@ export default function ChartCard({
   }, [metabaseQuestionId]);
 
   return (
-    <Card className="w-full">
-      <Title>{title}</Title>
+    <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+      {/* Card header */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <p className="text-sm font-semibold text-gray-900">{title}</p>
+        </div>
+        {!loading && !error && data.length > 0 && (
+          <div className="text-right">
+            <p className="text-2xl font-bold text-gray-900">
+              {(data.reduce((sum, row) => sum + (Number(row[yKeys[0]]) || 0), 0)).toLocaleString()}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">total completed swaps</p>
+          </div>
+        )}
+      </div>
+
+      {/* States */}
       {loading && (
-        <Text className="mt-4 text-gray-400">Loading data...</Text>
+        <div className="h-64 flex items-center justify-center">
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+            Loading data...
+          </div>
+        </div>
       )}
       {error && (
-        <Text className="mt-4 text-red-500">Error: {error}</Text>
+        <div className="h-64 flex items-center justify-center">
+          <p className="text-sm text-red-500">Error: {error}</p>
+        </div>
       )}
+
+      {/* Chart */}
       {!loading && !error && (
-        <ResponsiveContainer width="100%" height={300} className="mt-6">
-          <AreaChart data={data} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+        <ResponsiveContainer width="100%" height={260}>
+          <AreaChart data={data} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
             <defs>
               {yKeys.map((key, i) => (
-                <linearGradient
-                  key={key}
-                  id={`grad-${i}`}
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop offset="5%" stopColor={color} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={color} stopOpacity={0} />
+                <linearGradient key={key} id={`grad-${metabaseQuestionId}-${i}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={color} stopOpacity={0.2} />
+                  <stop offset="100%" stopColor={color} stopOpacity={0} />
                 </linearGradient>
               ))}
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
             <XAxis
               dataKey={xKey}
-              tick={{ fontSize: 12, fill: "#6b7280" }}
+              tick={{ fontSize: 11, fill: "#9ca3af", fontFamily: "inherit" }}
               axisLine={false}
               tickLine={false}
+              dy={6}
             />
             <YAxis
-              tick={{ fontSize: 12, fill: "#6b7280" }}
+              tick={{ fontSize: 11, fill: "#9ca3af", fontFamily: "inherit" }}
               axisLine={false}
               tickLine={false}
               width={40}
+              allowDecimals={false}
             />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#fff",
-                border: "1px solid #e5e7eb",
-                borderRadius: 8,
-                fontSize: 13,
-              }}
-            />
-            <Legend
-              wrapperStyle={{ fontSize: 13, color: "#6b7280", paddingTop: 8 }}
-            />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#e5e7eb", strokeWidth: 1 }} />
             {yKeys.map((key, i) => (
               <Area
                 key={key}
@@ -136,14 +163,14 @@ export default function ChartCard({
                 dataKey={key}
                 stroke={color}
                 strokeWidth={2}
-                fill={`url(#grad-${i})`}
+                fill={`url(#grad-${metabaseQuestionId}-${i})`}
                 dot={false}
-                activeDot={{ r: 5, fill: color }}
+                activeDot={{ r: 4, fill: color, strokeWidth: 0 }}
               />
             ))}
           </AreaChart>
         </ResponsiveContainer>
       )}
-    </Card>
+    </div>
   );
 }
