@@ -94,18 +94,18 @@ export default function ChartCard({
   }, [metabaseQuestionId]);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+    <div className="rounded-xl p-6" style={{ background: "#fff", border: "1px solid rgba(7,41,14,0.1)", boxShadow: "0 1px 4px rgba(7,41,14,0.04)" }}>
       {/* Card header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <p className="text-sm font-semibold text-gray-900">{title}</p>
+          <p className="text-sm font-semibold" style={{ color: "#07290E" }}>{title}</p>
         </div>
         {!loading && !error && data.length > 0 && (
           <div className="text-right">
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-2xl font-bold" style={{ color: "#07290E" }}>
               {(data.reduce((sum, row) => sum + (Number(row[yKeys[0]]) || 0), 0)).toLocaleString()}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">total completed swaps</p>
+            <p className="text-xs mt-0.5" style={{ color: "rgba(7,41,14,0.4)" }}>total completed swaps</p>
           </div>
         )}
       </div>
@@ -113,7 +113,7 @@ export default function ChartCard({
       {/* States */}
       {loading && (
         <div className="h-64 flex items-center justify-center">
-          <div className="flex items-center gap-2 text-sm text-gray-400">
+          <div className="flex items-center gap-2 text-sm" style={{ color: "rgba(7,41,14,0.4)" }}>
             <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
@@ -140,16 +140,16 @@ export default function ChartCard({
                 </linearGradient>
               ))}
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(7,41,14,0.06)" vertical={false} />
             <XAxis
               dataKey={xKey}
-              tick={{ fontSize: 11, fill: "#9ca3af", fontFamily: "inherit" }}
+              tick={{ fontSize: 11, fill: "rgba(7,41,14,0.4)", fontFamily: "inherit" }}
               axisLine={false}
               tickLine={false}
               dy={6}
             />
             <YAxis
-              tick={{ fontSize: 11, fill: "#9ca3af", fontFamily: "inherit" }}
+              tick={{ fontSize: 11, fill: "rgba(7,41,14,0.4)", fontFamily: "inherit" }}
               axisLine={false}
               tickLine={false}
               width={40}
