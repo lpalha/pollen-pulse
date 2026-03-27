@@ -4,7 +4,7 @@ import { useState } from "react";
 import MetricsTable, { Granularity } from "./components/MetricsTable";
 
 export default function DashboardPage() {
-  const [granularity, setGranularity] = useState<Granularity>("week");
+  const [granularity, setGranularity] = useState<Granularity>("day");
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -43,7 +43,7 @@ export default function DashboardPage() {
           className="flex items-center rounded-lg p-0.5 gap-0.5"
           style={{ background: "rgba(7,41,14,0.08)" }}
         >
-          {(["week", "month"] as Granularity[]).map((g) => (
+          {(["day", "week", "month"] as Granularity[]).map((g) => (
             <button
               key={g}
               onClick={() => setGranularity(g)}
@@ -58,7 +58,7 @@ export default function DashboardPage() {
                   : { color: "rgba(7,41,14,0.5)" }
               }
             >
-              {g === "week" ? "Weekly" : "Monthly"}
+              {g === "day" ? "Daily" : g === "week" ? "Weekly" : "Monthly"}
             </button>
           ))}
         </div>

@@ -63,9 +63,10 @@ export async function GET(
     );
   }
 
-  // Validate granularity strictly — only 'week' or 'month' allowed
+  // Validate granularity strictly — only 'day', 'week', or 'month' allowed
   const rawGranularity = req.nextUrl.searchParams.get("granularity");
-  const granularity = rawGranularity === "month" ? "month" : "week";
+  const granularity =
+    rawGranularity === "month" ? "month" : rawGranularity === "day" ? "day" : "week";
 
   const sqlTemplate = CARD_SQL[id];
 

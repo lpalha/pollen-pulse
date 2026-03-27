@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
 
-export type Granularity = "week" | "month";
+export type Granularity = "day" | "week" | "month";
 
 /* ─── Metric configuration ──────────────────────────────────────── */
 interface MetricConfig {
@@ -70,7 +70,11 @@ interface MetricState {
 /* ─── Helpers ────────────────────────────────────────────────────── */
 function getCurrentPeriodStart(granularity: Granularity): Date {
   const now = new Date();
-  if (granularity === "week") {
+  if (granularity === "day") {
+    const d = new Date(now);
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
+  } else if (granularity === "week") {
     const day = now.getUTCDay(); // 0 = Sun
     const diff = day === 0 ? -6 : 1 - day; // shift to Monday
     const d = new Date(now);
@@ -107,7 +111,7 @@ function fmt(value: number, decimals: number): string {
 }
 
 function fmtPeriodLabel(date: Date, granularity: Granularity): string {
-  if (granularity === "week") {
+  if (granularity === "day" || granularity === "week") {
     return date.toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",
@@ -134,7 +138,14 @@ function fmtPtdLabel(now: Date, granularity: Granularity): string {
 
 function fmtLastPeriodHeader(granularity: Granularity, lastPeriodStart: Date | null): string {
   if (!lastPeriodStart) return "—";
-  if (granularity === "week") {
+  if (granularity === "day") {
+    return lastPeriodStart.toLocaleDateString("en-GB", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+    });
+  } else if (granularity === "week") {
     return (
       "Week of " +
       lastPeriodStart.toLocaleDateString("en-GB", {
@@ -418,7 +429,7 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
                   minWidth: 140,
                 }}
               >
-                <div>{granularity === "week" ? "Last completed week" : "Last completed month"}</div>
+                <div>{granularity === "day" ? "Yesterday" : granularity === "week" ? "Last completed week" : "Last completed month"}</div>
                 <div
                   className="text-xs font-normal normal-case mt-0.5"
                   style={{ color: "rgba(7,41,14,0.35)", letterSpacing: 0 }}
@@ -436,7 +447,7 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
                   minWidth: 130,
                 }}
               >
-                <div>{granularity === "week" ? "Week to date" : "Month to date"}</div>
+                <div>{granularity === "day" ? "Today so far" : granularity === "week" ? "Week to date" : "Month to date"}</div>
                 <div
                   className="text-xs font-normal normal-case mt-0.5"
                   style={{ color: "rgba(7,41,14,0.35)", letterSpacing: 0 }}
