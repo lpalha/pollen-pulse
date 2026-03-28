@@ -153,6 +153,30 @@ export const SECTIONS: SectionConfig[] = [
     ],
   },
 
+  // ── Experience ──────────────────────────────────────────────────
+  {
+    id: "experience",
+    label: "Experience",
+    metrics: [
+      {
+        id: "avg_soc_in",
+        label: "Avg. SoC at swap in",
+        calculation: "Average state of charge of returned battery",
+        cardId: 79,
+        valueKey: "avg_soc_in",
+        decimals: 1,
+      },
+      {
+        id: "avg_soc_out",
+        label: "Avg. SoC at swap out",
+        calculation: "Average state of charge of dispensed battery",
+        cardId: 78,
+        valueKey: "avg_soc_out",
+        decimals: 1,
+      },
+    ],
+  },
+
   // ── Add more sections below ────────────────────────────────────
   // {
   //   id: "revenue",
