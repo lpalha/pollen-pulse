@@ -201,11 +201,6 @@ function MetricRow({
         {metric.label}
       </td>
 
-      {/* Unit */}
-      <td className={cellBase} style={{ color: "rgba(7,41,14,0.5)" }}>
-        {metric.unit}
-      </td>
-
       {/* Calculation */}
       <td
         className={cellBase}
@@ -380,12 +375,6 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
               />
               <th
                 className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide"
-                style={{ color: "rgba(7,41,14,0.4)", minWidth: 120 }}
-              >
-                Unit
-              </th>
-              <th
-                className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide"
                 style={{ color: "rgba(7,41,14,0.4)", minWidth: 200 }}
               >
                 Calculation
@@ -461,7 +450,7 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
                 {/* Section header */}
                 <tr key={`header-${section.id}`} style={{ background: "#374151" }}>
                   <td
-                    colSpan={6}
+                    colSpan={5}
                     className="px-5 py-2.5 text-xs font-semibold tracking-wide uppercase"
                     style={{ color: "#fff" }}
                   >

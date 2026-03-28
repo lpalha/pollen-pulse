@@ -21,7 +21,6 @@
  * │     {                                                           │
  * │       id: "unique_id",         // any unique string             │
  * │       label: "Display name",   // shown in the table            │
- * │       unit: "Number",          // or "Number (ratio)", etc.     │
  * │       calculation: "How...",   // short description             │
  * │       cardId: 66,              // from step 2                   │
  * │       valueKey: "column_name", // the value column name in SQL  │
@@ -50,8 +49,6 @@ export interface MetricConfig {
   id: string;
   /** Display label shown in the table row */
   label: string;
-  /** Unit column text, e.g. "Number", "Number (ratio)", "%" */
-  unit: string;
   /** Short description of how this metric is calculated */
   calculation: string;
   /** Metabase card ID — the number from the question URL */
@@ -84,7 +81,6 @@ export const SECTIONS: SectionConfig[] = [
       {
         id: "completed_swaps",
         label: "Completed swaps",
-        unit: "Number",
         calculation: "Count of battery swaps",
         cardId: 66,
         valueKey: "completed_swaps",
@@ -93,7 +89,6 @@ export const SECTIONS: SectionConfig[] = [
       {
         id: "swaps_per_vehicle",
         label: "Swaps / vehicle",
-        unit: "Number (ratio)",
         calculation: "Completed swaps / active vehicles",
         cardId: 67,
         valueKey: "swaps_per_vehicle",
@@ -102,7 +97,6 @@ export const SECTIONS: SectionConfig[] = [
       {
         id: "swaps_per_slot",
         label: "Swaps / slot",
-        unit: "Number (ratio)",
         calculation: "Completed swaps / total slots",
         cardId: 68,
         valueKey: "swaps_per_slot",
@@ -111,7 +105,6 @@ export const SECTIONS: SectionConfig[] = [
       {
         id: "swaps_per_site",
         label: "Swaps / site",
-        unit: "Number (ratio)",
         calculation: "Completed swaps / active sites",
         cardId: 69,
         valueKey: "swaps_per_site",
@@ -128,7 +121,6 @@ export const SECTIONS: SectionConfig[] = [
       {
         id: "active_users",
         label: "Active users",
-        unit: "Number",
         calculation: "New users (first swap in period)",
         cardId: 74,
         valueKey: "active_users",
@@ -137,7 +129,6 @@ export const SECTIONS: SectionConfig[] = [
       {
         id: "active_clients",
         label: "Active clients",
-        unit: "Number",
         calculation: "New clients (first swap in period)",
         cardId: 75,
         valueKey: "active_clients",
@@ -146,7 +137,6 @@ export const SECTIONS: SectionConfig[] = [
       {
         id: "users_with_swaps",
         label: "Users with swaps",
-        unit: "Number",
         calculation: "Unique users with ≥1 swap",
         cardId: 76,
         valueKey: "users_with_swaps",
@@ -155,7 +145,6 @@ export const SECTIONS: SectionConfig[] = [
       {
         id: "clients_with_swaps",
         label: "Clients with swaps",
-        unit: "Number",
         calculation: "Unique clients with ≥1 swap",
         cardId: 77,
         valueKey: "clients_with_swaps",
@@ -172,7 +161,6 @@ export const SECTIONS: SectionConfig[] = [
   //     {
   //       id: "total_revenue",
   //       label: "Total revenue",
-  //       unit: "EUR",
   //       calculation: "Sum of all invoices",
   //       cardId: 99,
   //       valueKey: "total_revenue",
