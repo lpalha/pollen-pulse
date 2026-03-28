@@ -46,6 +46,57 @@ const CARD_SQL: Record<string, string> = {
     WHERE s.end_time IS NOT NULL
     GROUP BY 1
     ORDER BY 1 ASC`,
+
+  // ── Users ────────────────────────────────────────────────────────
+  "74": `
+    SELECT
+      DATE_TRUNC('{G}', first_swap AT TIME ZONE 'Europe/Lisbon') AS period_start,
+      COUNT(DISTINCT vehicle_id) AS active_users
+    FROM (
+      SELECT d.vehicle_id, MIN(s.start_time) AS first_swap
+      FROM swaps s
+      JOIN docks d ON d.id = s.dock_id
+      WHERE s.end_time IS NOT NULL
+      GROUP BY d.vehicle_id
+    ) t
+    GROUP BY 1
+    ORDER BY 1 ASC`,
+
+  "75": `
+    SELECT
+      DATE_TRUNC('{G}', first_swap AT TIME ZONE 'Europe/Lisbon') AS period_start,
+      COUNT(DISTINCT billing_info_id) AS active_clients
+    FROM (
+      SELECT v.billing_info_id, MIN(s.start_time) AS first_swap
+      FROM swaps s
+      JOIN docks d ON d.id = s.dock_id
+      JOIN vehicles v ON v.id = d.vehicle_id
+      WHERE s.end_time IS NOT NULL AND v.billing_info_id IS NOT NULL
+      GROUP BY v.billing_info_id
+    ) t
+    GROUP BY 1
+    ORDER BY 1 ASC`,
+
+  "76": `
+    SELECT
+      DATE_TRUNC('{G}', s.start_time AT TIME ZONE 'Europe/Lisbon') AS period_start,
+      COUNT(DISTINCT d.vehicle_id) AS users_with_swaps
+    FROM swaps s
+    JOIN docks d ON d.id = s.dock_id
+    WHERE s.end_time IS NOT NULL
+    GROUP BY 1
+    ORDER BY 1 ASC`,
+
+  "77": `
+    SELECT
+      DATE_TRUNC('{G}', s.start_time AT TIME ZONE 'Europe/Lisbon') AS period_start,
+      COUNT(DISTINCT v.billing_info_id) AS clients_with_swaps
+    FROM swaps s
+    JOIN docks d ON d.id = s.dock_id
+    JOIN vehicles v ON v.id = d.vehicle_id
+    WHERE s.end_time IS NOT NULL AND v.billing_info_id IS NOT NULL
+    GROUP BY 1
+    ORDER BY 1 ASC`,
 };
 
 export async function GET(

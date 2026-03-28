@@ -16,7 +16,7 @@ interface MetricConfig {
   decimals: number;
 }
 
-const METRICS: MetricConfig[] = [
+const SWAPS_METRICS: MetricConfig[] = [
   {
     id: "swaps",
     label: "Completed swaps",
@@ -54,6 +54,47 @@ const METRICS: MetricConfig[] = [
     decimals: 1,
   },
 ];
+
+const USERS_METRICS: MetricConfig[] = [
+  {
+    id: "active_users",
+    label: "Active users",
+    unit: "Number",
+    calculation: "New users (first swap in period)",
+    cardId: 74,
+    valueKey: "active_users",
+    decimals: 0,
+  },
+  {
+    id: "active_clients",
+    label: "Active clients",
+    unit: "Number",
+    calculation: "New clients (first swap in period)",
+    cardId: 75,
+    valueKey: "active_clients",
+    decimals: 0,
+  },
+  {
+    id: "users_with_swaps",
+    label: "Users with swaps",
+    unit: "Number",
+    calculation: "Unique users with ≥1 swap",
+    cardId: 76,
+    valueKey: "users_with_swaps",
+    decimals: 0,
+  },
+  {
+    id: "clients_with_swaps",
+    label: "Clients with swaps",
+    unit: "Number",
+    calculation: "Unique clients with ≥1 swap",
+    cardId: 77,
+    valueKey: "clients_with_swaps",
+    decimals: 0,
+  },
+];
+
+const ALL_METRICS = [...SWAPS_METRICS, ...USERS_METRICS];
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 interface DataPoint {
@@ -336,7 +377,7 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
   const SPARK_COUNT = 6;
   const [metricStates, setMetricStates] = useState<Record<string, MetricState>>(
     Object.fromEntries(
-      METRICS.map((m) => [m.id, { points: [], loading: true, error: null }])
+      ALL_METRICS.map((m) => [m.id, { points: [], loading: true, error: null }])
     )
   );
 
@@ -344,11 +385,11 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
     // Reset to loading when granularity changes
     setMetricStates(
       Object.fromEntries(
-        METRICS.map((m) => [m.id, { points: [], loading: true, error: null }])
+        ALL_METRICS.map((m) => [m.id, { points: [], loading: true, error: null }])
       )
     );
 
-    METRICS.forEach((metric) => {
+    ALL_METRICS.forEach((metric) => {
       fetch(`/api/metabase/${metric.cardId}?granularity=${granularity}`)
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -467,7 +508,7 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
               >
                 <div>
                   Last {sparkPeriods.length || SPARK_COUNT}{" "}
-                  {granularity === "week" ? "weeks" : "months"}
+                  {granularity === "day" ? "days" : granularity === "week" ? "weeks" : "months"}
                 </div>
                 {/* Period date labels */}
                 {sparkPeriods.length > 0 && (
@@ -487,7 +528,7 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
           </thead>
 
           <tbody>
-            {/* ── Section header ── */}
+            {/* ── Swaps section header ── */}
             <tr style={{ background: "#374151" }}>
               <td
                 colSpan={6}
@@ -498,8 +539,28 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
               </td>
             </tr>
 
-            {/* ── Metric rows ── */}
-            {METRICS.map((metric) => (
+            {SWAPS_METRICS.map((metric) => (
+              <MetricRow
+                key={metric.id}
+                metric={metric}
+                state={metricStates[metric.id]}
+                granularity={granularity}
+                periodCount={SPARK_COUNT}
+              />
+            ))}
+
+            {/* ── Users section header ── */}
+            <tr style={{ background: "#374151" }}>
+              <td
+                colSpan={6}
+                className="px-5 py-2.5 text-xs font-semibold tracking-wide uppercase"
+                style={{ color: "#fff" }}
+              >
+                ▼ Users
+              </td>
+            </tr>
+
+            {USERS_METRICS.map((metric) => (
               <MetricRow
                 key={metric.id}
                 metric={metric}
@@ -521,8 +582,8 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
           color: "rgba(7,41,14,0.35)",
         }}
       >
-        All times UTC · {granularity === "week" ? "Week starts Monday" : "Monthly view"} ·
-        Source: Metabase cards #66–69
+        All times UTC · {granularity === "day" ? "Daily view" : granularity === "week" ? "Week starts Monday" : "Monthly view"} ·
+        Source: Metabase cards #66–69 (Swaps) · #74–77 (Users)
       </div>
     </div>
   );
