@@ -2,36 +2,45 @@
  * ┌─────────────────────────────────────────────────────────────────┐
  * │  PULSE DASHBOARD CONFIGURATION                                  │
  * │                                                                 │
- * │  This file defines every section and metric shown on the        │
- * │  dashboard. It is the ONLY file you need to edit to change      │
- * │  what appears on the page. (You also need to add the SQL        │
- * │  query in app/config/queries.ts — see instructions there.)      │
+ * │  This is the ONLY file you need to edit to add metrics or       │
+ * │  sections to the dashboard. The SQL lives in Metabase — Pulse   │
+ * │  fetches it automatically from the card ID. No SQL in the       │
+ * │  codebase.                                                      │
  * │                                                                 │
  * │  ─── HOW TO ADD A METRIC TO AN EXISTING SECTION ───             │
  * │                                                                 │
- * │  1. Find the Metabase question URL you want to add.             │
- * │     The card ID is the number in the URL:                       │
+ * │  1. Create the question in Metabase. The SQL must:              │
+ * │     - Use {{granularity}} for DATE_TRUNC (day/week/month)       │
+ * │     - Return a column called period_start                       │
+ * │     - Return a value column (you pick the name)                 │
+ * │                                                                 │
+ * │  2. Get the card ID from the Metabase URL:                      │
  * │     /question/66-swaps-weekly → card ID = 66                    │
  * │                                                                 │
- * │  2. Add an entry to the section's `metrics` array below:        │
+ * │  3. Add an entry to the section's `metrics` array below:        │
  * │     {                                                           │
  * │       id: "unique_id",         // any unique string             │
  * │       label: "Display name",   // shown in the table            │
  * │       unit: "Number",          // or "Number (ratio)", etc.     │
  * │       calculation: "How...",   // short description             │
- * │       cardId: 66,              // from step 1                   │
- * │       valueKey: "column_name", // SQL result column name        │
+ * │       cardId: 66,              // from step 2                   │
+ * │       valueKey: "column_name", // the value column name in SQL  │
  * │       decimals: 0,             // 0 = integer, 1 = 0.0, etc.   │
  * │     }                                                           │
  * │                                                                 │
- * │  3. Add the SQL in app/config/queries.ts (same card ID)         │
+ * │  That's it. No other files need editing.                        │
  * │                                                                 │
  * │  ─── HOW TO ADD A NEW SECTION ───                               │
  * │                                                                 │
- * │  1. Add a new object to the SECTIONS array below:               │
- * │     { id: "my_section", label: "My Section", metrics: [...] }   │
+ * │  Add a new object to the SECTIONS array:                        │
+ * │  { id: "my_section", label: "My Section", metrics: [...] }      │
  * │                                                                 │
- * │  2. Add SQL templates for each metric in queries.ts             │
+ * │  ─── HOW IT WORKS ───                                           │
+ * │                                                                 │
+ * │  The API route fetches the card's SQL from Metabase at runtime, │
+ * │  replaces {{granularity}} with the selected value, and runs it. │
+ * │  If you update the SQL in Metabase, the dashboard picks it up   │
+ * │  automatically on the next request.                             │
  * │                                                                 │
  * └─────────────────────────────────────────────────────────────────┘
  */

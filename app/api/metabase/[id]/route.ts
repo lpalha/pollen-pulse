@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CARD_SQL } from "@/app/config/queries";
 
 const DB_ID = 2;
 
+/**
+ * Fetches a Metabase card's SQL, substitutes the granularity value,
+ * and runs it via /api/dataset.
+ *
+ * The SQL lives in Metabase — we never hardcode it. If someone updates
+ * the query in Metabase, the dashboard picks it up automatically.
+ *
+ * The only substitution we do is replacing {{granularity}} (Metabase
+ * template-tag syntax) with the actual value ('day', 'week', 'month'),
+ * because Metabase can't pass DATE_TRUNC's string argument as a bound
+ * JDBC parameter.
+ */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,23 +29,61 @@ export async function GET(
     );
   }
 
-  // Validate granularity strictly — only 'day', 'week', or 'month' allowed
+  // Validate granularity strictly
   const rawGranularity = req.nextUrl.searchParams.get("granularity");
   const granularity =
     rawGranularity === "month" ? "month" : rawGranularity === "day" ? "day" : "week";
 
-  const sqlTemplate = CARD_SQL[id];
+  const headers = {
+    "X-API-Key": apiKey,
+    "Content-Type": "application/json",
+  };
 
-  if (sqlTemplate) {
-    // Use /api/dataset with direct SQL substitution to avoid JDBC param issues
-    const query = sqlTemplate.replace(/\{G\}/g, granularity);
+  try {
+    // ── Step 1: Fetch the card definition to get the SQL ──────────
+    const cardRes = await fetch(`${base}/api/card/${id}`, { headers });
 
+    if (!cardRes.ok) {
+      return NextResponse.json(
+        { error: `Failed to fetch card ${id}: HTTP ${cardRes.status}` },
+        { status: cardRes.status }
+      );
+    }
+
+    const card = await cardRes.json();
+    const datasetQuery = card.dataset_query;
+
+    // Extract the native SQL — handle both Metabase query formats
+    let nativeSQL: string | null = null;
+
+    // Format 1 (newer): dataset_query.stages[0].native
+    if (datasetQuery?.stages?.[0]?.native) {
+      nativeSQL = datasetQuery.stages[0].native;
+    }
+    // Format 2 (older): dataset_query.native.query
+    else if (datasetQuery?.native?.query) {
+      nativeSQL = datasetQuery.native.query;
+    }
+
+    if (!nativeSQL) {
+      return NextResponse.json(
+        { error: `Card ${id} does not contain a native SQL query` },
+        { status: 400 }
+      );
+    }
+
+    // ── Step 2: Substitute template tags ──────────────────────────
+    // Replace {{granularity}} with the actual value.
+    // Uses a regex to handle optional whitespace: {{ granularity }}
+    const query = nativeSQL.replace(
+      /\{\{\s*granularity\s*\}\}/gi,
+      granularity
+    );
+
+    // ── Step 3: Run the query via /api/dataset ────────────────────
     const res = await fetch(`${base}/api/dataset`, {
       method: "POST",
-      headers: {
-        "X-API-Key": apiKey,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({
         database: DB_ID,
         type: "native",
@@ -44,32 +93,15 @@ export async function GET(
 
     if (!res.ok) {
       return NextResponse.json(
-        { error: `Metabase returned ${res.status}` },
+        { error: `Metabase query failed: HTTP ${res.status}` },
         { status: res.status }
       );
     }
 
     const data = await res.json();
     return NextResponse.json(data);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  // Fallback: call card by ID directly (for other cards without SQL templates)
-  const res = await fetch(`${base}/api/card/${id}/query`, {
-    method: "POST",
-    headers: {
-      "X-API-Key": apiKey,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({}),
-  });
-
-  if (!res.ok) {
-    return NextResponse.json(
-      { error: `Metabase returned ${res.status}` },
-      { status: res.status }
-    );
-  }
-
-  const data = await res.json();
-  return NextResponse.json(data);
 }
