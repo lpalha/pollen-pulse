@@ -1,100 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
+import { SECTIONS, MetricConfig } from "@/app/config/dashboard";
 
 export type Granularity = "day" | "week" | "month";
-
-/* ─── Metric configuration ──────────────────────────────────────── */
-interface MetricConfig {
-  id: string;
-  label: string;
-  unit: string;
-  calculation: string;
-  cardId: number;
-  valueKey: string;
-  decimals: number;
-}
-
-const SWAPS_METRICS: MetricConfig[] = [
-  {
-    id: "swaps",
-    label: "Completed swaps",
-    unit: "Number",
-    calculation: "Count of battery swaps",
-    cardId: 66,
-    valueKey: "completed_swaps",
-    decimals: 0,
-  },
-  {
-    id: "per_vehicle",
-    label: "Swaps / vehicle",
-    unit: "Number (ratio)",
-    calculation: "Completed swaps / active vehicles",
-    cardId: 67,
-    valueKey: "swaps_per_vehicle",
-    decimals: 1,
-  },
-  {
-    id: "per_slot",
-    label: "Swaps / slot",
-    unit: "Number (ratio)",
-    calculation: "Completed swaps / total slots",
-    cardId: 68,
-    valueKey: "swaps_per_slot",
-    decimals: 2,
-  },
-  {
-    id: "per_site",
-    label: "Swaps / site",
-    unit: "Number (ratio)",
-    calculation: "Completed swaps / active sites",
-    cardId: 69,
-    valueKey: "swaps_per_site",
-    decimals: 1,
-  },
-];
-
-const USERS_METRICS: MetricConfig[] = [
-  {
-    id: "active_users",
-    label: "Active users",
-    unit: "Number",
-    calculation: "New users (first swap in period)",
-    cardId: 74,
-    valueKey: "active_users",
-    decimals: 0,
-  },
-  {
-    id: "active_clients",
-    label: "Active clients",
-    unit: "Number",
-    calculation: "New clients (first swap in period)",
-    cardId: 75,
-    valueKey: "active_clients",
-    decimals: 0,
-  },
-  {
-    id: "users_with_swaps",
-    label: "Users with swaps",
-    unit: "Number",
-    calculation: "Unique users with ≥1 swap",
-    cardId: 76,
-    valueKey: "users_with_swaps",
-    decimals: 0,
-  },
-  {
-    id: "clients_with_swaps",
-    label: "Clients with swaps",
-    unit: "Number",
-    calculation: "Unique clients with ≥1 swap",
-    cardId: 77,
-    valueKey: "clients_with_swaps",
-    decimals: 0,
-  },
-];
-
-const ALL_METRICS = [...SWAPS_METRICS, ...USERS_METRICS];
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 interface DataPoint {
@@ -203,6 +113,12 @@ function fmtLastPeriodHeader(granularity: Granularity, lastPeriodStart: Date | n
     });
   }
 }
+
+const GRANULARITY_LABELS: Record<Granularity, { last: string; ptd: string; plural: string }> = {
+  day: { last: "Yesterday", ptd: "Today so far", plural: "days" },
+  week: { last: "Last completed week", ptd: "Week to date", plural: "weeks" },
+  month: { last: "Last completed month", ptd: "Month to date", plural: "months" },
+};
 
 /* ─── Sparkline subcomponent ─────────────────────────────────────── */
 function Sparkline({ points, color = "#AACC00" }: { points: DataPoint[]; color?: string }) {
@@ -375,9 +291,16 @@ function MetricRow({
 /* ─── Main component ─────────────────────────────────────────────── */
 export default function MetricsTable({ granularity }: { granularity: Granularity }) {
   const SPARK_COUNT = 6;
+
+  // Flatten all metrics from all sections for data fetching
+  const allMetrics = useMemo(
+    () => SECTIONS.flatMap((s) => s.metrics),
+    []
+  );
+
   const [metricStates, setMetricStates] = useState<Record<string, MetricState>>(
     Object.fromEntries(
-      ALL_METRICS.map((m) => [m.id, { points: [], loading: true, error: null }])
+      allMetrics.map((m) => [m.id, { points: [], loading: true, error: null }])
     )
   );
 
@@ -385,11 +308,11 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
     // Reset to loading when granularity changes
     setMetricStates(
       Object.fromEntries(
-        ALL_METRICS.map((m) => [m.id, { points: [], loading: true, error: null }])
+        allMetrics.map((m) => [m.id, { points: [], loading: true, error: null }])
       )
     );
 
-    ALL_METRICS.forEach((metric) => {
+    allMetrics.forEach((metric) => {
       fetch(`/api/metabase/${metric.cardId}?granularity=${granularity}`)
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -409,21 +332,28 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
           }));
         });
     });
-  }, [granularity]);
+  }, [granularity, allMetrics]);
 
-  // Derive period labels from the swaps card (first metric)
+  // Derive period labels from the first metric in the first section
+  const firstMetric = allMetrics[0];
   const currentStart = getCurrentPeriodStart(granularity);
-  const swapsState = metricStates["swaps"];
-  const completedSwaps = swapsState.points.filter(
+  const firstState = metricStates[firstMetric?.id];
+  const completedFirst = firstState?.points.filter(
     (p) => new Date(p.period_start).getTime() < currentStart.getTime()
-  );
-  const sparkPeriods = completedSwaps.slice(-SPARK_COUNT);
+  ) ?? [];
+  const sparkPeriods = completedFirst.slice(-SPARK_COUNT);
   const lastPeriodStart =
-    completedSwaps.length > 0
-      ? new Date(completedSwaps[completedSwaps.length - 1].period_start)
+    completedFirst.length > 0
+      ? new Date(completedFirst[completedFirst.length - 1].period_start)
       : null;
 
   const now = new Date();
+  const labels = GRANULARITY_LABELS[granularity];
+
+  // Build card ID list for footer
+  const cardIds = SECTIONS.map(
+    (s) => `#${s.metrics.map((m) => m.cardId).join(", #")} (${s.label})`
+  ).join(" · ");
 
   return (
     <div
@@ -470,7 +400,7 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
                   minWidth: 140,
                 }}
               >
-                <div>{granularity === "day" ? "Yesterday" : granularity === "week" ? "Last completed week" : "Last completed month"}</div>
+                <div>{labels.last}</div>
                 <div
                   className="text-xs font-normal normal-case mt-0.5"
                   style={{ color: "rgba(7,41,14,0.35)", letterSpacing: 0 }}
@@ -488,7 +418,7 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
                   minWidth: 130,
                 }}
               >
-                <div>{granularity === "day" ? "Today so far" : granularity === "week" ? "Week to date" : "Month to date"}</div>
+                <div>{labels.ptd}</div>
                 <div
                   className="text-xs font-normal normal-case mt-0.5"
                   style={{ color: "rgba(7,41,14,0.35)", letterSpacing: 0 }}
@@ -507,10 +437,8 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
                 }}
               >
                 <div>
-                  Last {sparkPeriods.length || SPARK_COUNT}{" "}
-                  {granularity === "day" ? "days" : granularity === "week" ? "weeks" : "months"}
+                  Last {sparkPeriods.length || SPARK_COUNT} {labels.plural}
                 </div>
-                {/* Period date labels */}
                 {sparkPeriods.length > 0 && (
                   <div
                     className="flex justify-around mt-0.5 px-1"
@@ -528,46 +456,30 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
           </thead>
 
           <tbody>
-            {/* ── Swaps section header ── */}
-            <tr style={{ background: "#374151" }}>
-              <td
-                colSpan={6}
-                className="px-5 py-2.5 text-xs font-semibold tracking-wide uppercase"
-                style={{ color: "#fff" }}
-              >
-                ▼ Swaps
-              </td>
-            </tr>
+            {SECTIONS.map((section) => (
+              <>
+                {/* Section header */}
+                <tr key={`header-${section.id}`} style={{ background: "#374151" }}>
+                  <td
+                    colSpan={6}
+                    className="px-5 py-2.5 text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: "#fff" }}
+                  >
+                    ▼ {section.label}
+                  </td>
+                </tr>
 
-            {SWAPS_METRICS.map((metric) => (
-              <MetricRow
-                key={metric.id}
-                metric={metric}
-                state={metricStates[metric.id]}
-                granularity={granularity}
-                periodCount={SPARK_COUNT}
-              />
-            ))}
-
-            {/* ── Users section header ── */}
-            <tr style={{ background: "#374151" }}>
-              <td
-                colSpan={6}
-                className="px-5 py-2.5 text-xs font-semibold tracking-wide uppercase"
-                style={{ color: "#fff" }}
-              >
-                ▼ Users
-              </td>
-            </tr>
-
-            {USERS_METRICS.map((metric) => (
-              <MetricRow
-                key={metric.id}
-                metric={metric}
-                state={metricStates[metric.id]}
-                granularity={granularity}
-                periodCount={SPARK_COUNT}
-              />
+                {/* Metric rows */}
+                {section.metrics.map((metric) => (
+                  <MetricRow
+                    key={metric.id}
+                    metric={metric}
+                    state={metricStates[metric.id]}
+                    granularity={granularity}
+                    periodCount={SPARK_COUNT}
+                  />
+                ))}
+              </>
             ))}
           </tbody>
         </table>
@@ -583,7 +495,7 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
         }}
       >
         All times UTC · {granularity === "day" ? "Daily view" : granularity === "week" ? "Week starts Monday" : "Monthly view"} ·
-        Source: Metabase cards #66–69 (Swaps) · #74–77 (Users)
+        Source: Metabase cards {cardIds}
       </div>
     </div>
   );
