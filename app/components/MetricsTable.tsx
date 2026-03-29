@@ -38,12 +38,12 @@ function getCurrentPeriodStart(granularity: Granularity): Date {
 }
 
 function transformRaw(
-  raw: { data: { cols: { name: string }[]; rows: (string | number | null)[][] } },
-  valueKey: string
+  raw: { data: { cols: { name: string }[]; rows: (string | number | null)[][] } }
 ): DataPoint[] {
   const { cols, rows } = raw.data;
   const pIdx = cols.findIndex((c) => c.name === "period_start");
-  const vIdx = cols.findIndex((c) => c.name === valueKey);
+  // Pick the first column that isn't period_start as the value
+  const vIdx = cols.findIndex((_, i) => i !== pIdx);
   if (pIdx === -1 || vIdx === -1) return [];
   return rows
     .map((row) => ({
@@ -416,7 +416,7 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
           return res.json();
         })
         .then((raw) => {
-          const points = transformRaw(raw, metric.valueKey);
+          const points = transformRaw(raw);
           setMetricStates((prev) => ({
             ...prev,
             [metric.id]: { points, loading: false, error: null },

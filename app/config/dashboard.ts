@@ -23,7 +23,6 @@
  * │       label: "Display name",   // shown in the table            │
  * │       calculation: "How...",   // tooltip on hover (info icon)  │
  * │       cardId: 66,              // from step 2                   │
- * │       valueKey: "column_name", // the value column name in SQL  │
  * │       decimals: 0,             // 0 = integer, 1 = 0.0, etc.   │
  * │       suffix: "%",            // optional — appended to values  │
  * │     }                                                           │
@@ -54,8 +53,6 @@ export interface MetricConfig {
   calculation: string;
   /** Metabase card ID — the number from the question URL */
   cardId: number;
-  /** Column name in the SQL result that holds the metric value */
-  valueKey: string;
   /** Decimal places for display (0 = integer, 1 = 0.0, 2 = 0.00) */
   decimals: number;
   /** Optional suffix appended after values, e.g. "%" */
@@ -86,7 +83,6 @@ export const SECTIONS: SectionConfig[] = [
         label: "Completed swaps",
         calculation: "Count of battery swaps",
         cardId: 66,
-        valueKey: "completed_swaps",
         decimals: 0,
       },
       {
@@ -94,7 +90,6 @@ export const SECTIONS: SectionConfig[] = [
         label: "Swaps / vehicle",
         calculation: "Completed swaps / active vehicles",
         cardId: 67,
-        valueKey: "swaps_per_vehicle",
         decimals: 1,
       },
       {
@@ -102,7 +97,6 @@ export const SECTIONS: SectionConfig[] = [
         label: "Swaps / slot",
         calculation: "Completed swaps / total slots",
         cardId: 68,
-        valueKey: "swaps_per_slot",
         decimals: 2,
       },
       {
@@ -110,7 +104,6 @@ export const SECTIONS: SectionConfig[] = [
         label: "Swaps / site",
         calculation: "Completed swaps / active sites",
         cardId: 69,
-        valueKey: "swaps_per_site",
         decimals: 1,
       },
     ],
@@ -126,7 +119,6 @@ export const SECTIONS: SectionConfig[] = [
         label: "Active users",
         calculation: "New users (first swap in period)",
         cardId: 74,
-        valueKey: "total_active_users",
         decimals: 0,
       },
       {
@@ -134,7 +126,6 @@ export const SECTIONS: SectionConfig[] = [
         label: "Active clients",
         calculation: "New clients (first swap in period)",
         cardId: 75,
-        valueKey: "total_active_clients",
         decimals: 0,
       },
       {
@@ -142,7 +133,6 @@ export const SECTIONS: SectionConfig[] = [
         label: "Users with swaps",
         calculation: "Unique users with ≥1 swap",
         cardId: 76,
-        valueKey: "users_with_swaps",
         decimals: 0,
       },
       {
@@ -150,7 +140,6 @@ export const SECTIONS: SectionConfig[] = [
         label: "Clients with swaps",
         calculation: "Unique clients with ≥1 swap",
         cardId: 77,
-        valueKey: "clients_with_swaps",
         decimals: 0,
       },
     ],
@@ -166,7 +155,6 @@ export const SECTIONS: SectionConfig[] = [
         label: "Avg. SoC at swap in",
         calculation: "Average state of charge of returned battery",
         cardId: 79,
-        valueKey: "avg_soc_in",
         decimals: 1,
         suffix: "%",
       },
@@ -175,7 +163,6 @@ export const SECTIONS: SectionConfig[] = [
         label: "Avg. SoC at swap out",
         calculation: "Average state of charge of dispensed battery",
         cardId: 78,
-        valueKey: "avg_soc_out",
         decimals: 1,
         suffix: "%",
       },
@@ -192,7 +179,6 @@ export const SECTIONS: SectionConfig[] = [
   //       label: "Total revenue",
   //       calculation: "Sum of all invoices",
   //       cardId: 99,
-  //       valueKey: "total_revenue",
   //       decimals: 2,
   //     },
   //   ],
