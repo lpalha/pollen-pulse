@@ -170,6 +170,8 @@ function InfoTooltip({ text }: { text: string }) {
 }
 
 /* ─── Sparkline subcomponent ─────────────────────────────────────── */
+const SPARK_MARGIN = { top: 8, right: 20, left: 20, bottom: 4 };
+
 function Sparkline({
   points,
   decimals,
@@ -186,11 +188,12 @@ function Sparkline({
 
   const data = points.map((p) => ({ v: p.value }));
   const sfx = suffix || "";
+  const n = points.length;
 
   return (
     <div>
       <ResponsiveContainer width="100%" height={56}>
-        <LineChart data={data} margin={{ top: 8, right: 12, left: 12, bottom: 4 }}>
+        <LineChart data={data} margin={SPARK_MARGIN}>
           <Line
             type="monotone"
             dataKey="v"
@@ -214,16 +217,31 @@ function Sparkline({
           />
         </LineChart>
       </ResponsiveContainer>
-      {/* Value labels below chart */}
+      {/* Value labels positioned to align with chart data points */}
       <div
-        className="flex justify-around px-3 -mt-1"
-        style={{ color: "rgba(7,41,14,0.45)" }}
+        className="relative -mt-1"
+        style={{
+          marginLeft: SPARK_MARGIN.left,
+          marginRight: SPARK_MARGIN.right,
+          color: "rgba(7,41,14,0.45)",
+        }}
       >
-        {points.map((p) => (
-          <span key={p.period_start} className="text-[10px] font-medium tabular-nums">
-            {fmtCompact(p.value, decimals)}{sfx}
-          </span>
-        ))}
+        {points.map((p, i) => {
+          // Each data point is evenly spaced across the plot area.
+          // For n points: x = i / (n - 1) * 100%  (0% for first, 100% for last)
+          const pct = n > 1 ? (i / (n - 1)) * 100 : 50;
+          return (
+            <span
+              key={p.period_start}
+              className="absolute text-[10px] font-medium tabular-nums -translate-x-1/2"
+              style={{ left: `${pct}%` }}
+            >
+              {fmtCompact(p.value, decimals)}{sfx}
+            </span>
+          );
+        })}
+        {/* Reserve vertical space for the labels */}
+        <span className="invisible text-[10px]">&nbsp;</span>
       </div>
     </div>
   );
