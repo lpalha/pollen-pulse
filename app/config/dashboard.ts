@@ -126,7 +126,7 @@ export const SECTIONS: SectionConfig[] = [
         label: "Active users",
         calculation: "New users (first swap in period)",
         cardId: 74,
-        valueKey: "active_users",
+        valueKey: "total_active_users",
         decimals: 0,
       },
       {
@@ -134,7 +134,7 @@ export const SECTIONS: SectionConfig[] = [
         label: "Active clients",
         calculation: "New clients (first swap in period)",
         cardId: 75,
-        valueKey: "active_clients",
+        valueKey: "total_active_clients",
         decimals: 0,
       },
       {
