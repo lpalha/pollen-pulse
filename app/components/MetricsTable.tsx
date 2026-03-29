@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
 import { SECTIONS, MetricConfig } from "@/app/config/dashboard";
 
@@ -61,6 +61,13 @@ function fmt(value: number, decimals: number): string {
   return value.toFixed(decimals);
 }
 
+/** Compact format for sparkline labels: 1234 → "1.2k", 42 → "42" */
+function fmtCompact(value: number, decimals: number): string {
+  if (value >= 1000) return (value / 1000).toFixed(1) + "k";
+  if (decimals === 0) return Math.round(value).toString();
+  return value.toFixed(decimals);
+}
+
 function fmtPeriodLabel(date: Date, granularity: Granularity): string {
   if (granularity === "day" || granularity === "week") {
     return date.toLocaleDateString("en-GB", {
@@ -84,11 +91,11 @@ function fmtPtdLabel(now: Date, granularity: Granularity): string {
     month: "short",
     timeZone: "UTC",
   });
-  return `${s} → now`;
+  return `${s} \u2192 now`;
 }
 
 function fmtLastPeriodHeader(granularity: Granularity, lastPeriodStart: Date | null): string {
-  if (!lastPeriodStart) return "—";
+  if (!lastPeriodStart) return "\u2014";
   if (granularity === "day") {
     return lastPeriodStart.toLocaleDateString("en-GB", {
       weekday: "short",
@@ -120,39 +127,105 @@ const GRANULARITY_LABELS: Record<Granularity, { last: string; ptd: string; plura
   month: { last: "Last completed month", ptd: "Month to date", plural: "months" },
 };
 
+/* ─── Info tooltip (CSS only) ────────────────────────────────────── */
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <span className="relative inline-flex items-center ml-1.5 group">
+      <span
+        className="inline-flex items-center justify-center rounded-full cursor-help"
+        style={{
+          width: 16,
+          height: 16,
+          fontSize: 10,
+          fontWeight: 600,
+          color: "rgba(7,41,14,0.35)",
+          border: "1px solid rgba(7,41,14,0.15)",
+        }}
+      >
+        i
+      </span>
+      <span
+        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 rounded-md text-xs font-normal whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50"
+        style={{
+          background: "#07290E",
+          color: "#F5F1EA",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        }}
+      >
+        {text}
+        {/* Arrow */}
+        <span
+          className="absolute top-full left-1/2 -translate-x-1/2"
+          style={{
+            width: 0,
+            height: 0,
+            borderLeft: "5px solid transparent",
+            borderRight: "5px solid transparent",
+            borderTop: "5px solid #07290E",
+          }}
+        />
+      </span>
+    </span>
+  );
+}
+
 /* ─── Sparkline subcomponent ─────────────────────────────────────── */
-function Sparkline({ points, color = "#AACC00" }: { points: DataPoint[]; color?: string }) {
+function Sparkline({
+  points,
+  decimals,
+  suffix,
+  color = "#AACC00",
+}: {
+  points: DataPoint[];
+  decimals: number;
+  suffix?: string;
+  color?: string;
+}) {
   if (points.length === 0)
-    return <span className="text-xs" style={{ color: "rgba(7,41,14,0.3)" }}>—</span>;
+    return <span className="text-xs" style={{ color: "rgba(7,41,14,0.3)" }}>{"\u2014"}</span>;
 
   const data = points.map((p) => ({ v: p.value }));
+  const sfx = suffix || "";
 
   return (
-    <ResponsiveContainer width="100%" height={52}>
-      <LineChart data={data} margin={{ top: 4, right: 2, left: 2, bottom: 4 }}>
-        <Line
-          type="monotone"
-          dataKey="v"
-          stroke={color}
-          strokeWidth={1.8}
-          dot={false}
-          activeDot={{ r: 3, fill: color, strokeWidth: 0 }}
-        />
-        <Tooltip
-          contentStyle={{
-            background: "#fff",
-            border: "1px solid rgba(7,41,14,0.12)",
-            borderRadius: 6,
-            fontSize: 11,
-            padding: "4px 8px",
-            color: "#07290E",
-          }}
-          itemStyle={{ color: "#07290E", fontWeight: 600 }}
-          formatter={(v: number) => [v.toLocaleString("en-GB"), ""]}
-          labelFormatter={() => ""}
-        />
-      </LineChart>
-    </ResponsiveContainer>
+    <div>
+      <ResponsiveContainer width="100%" height={56}>
+        <LineChart data={data} margin={{ top: 8, right: 12, left: 12, bottom: 4 }}>
+          <Line
+            type="monotone"
+            dataKey="v"
+            stroke={color}
+            strokeWidth={1.8}
+            dot={{ r: 3, fill: color, strokeWidth: 0 }}
+            activeDot={{ r: 4, fill: color, strokeWidth: 2, stroke: "#fff" }}
+          />
+          <Tooltip
+            contentStyle={{
+              background: "#fff",
+              border: "1px solid rgba(7,41,14,0.12)",
+              borderRadius: 6,
+              fontSize: 11,
+              padding: "4px 8px",
+              color: "#07290E",
+            }}
+            itemStyle={{ color: "#07290E", fontWeight: 600 }}
+            formatter={(v: number) => [v.toLocaleString("en-GB") + sfx, ""]}
+            labelFormatter={() => ""}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+      {/* Value labels below chart */}
+      <div
+        className="flex justify-around px-3 -mt-1"
+        style={{ color: "rgba(7,41,14,0.45)" }}
+      >
+        {points.map((p) => (
+          <span key={p.period_start} className="text-[10px] font-medium tabular-nums">
+            {fmtCompact(p.value, decimals)}{sfx}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -185,6 +258,7 @@ function MetricRow({
       ? ((lastPt.value - prevPt.value) / prevPt.value) * 100
       : null;
 
+  const sfx = metric.suffix || "";
   const cellBase = "px-4 py-4 text-sm align-middle";
 
   return (
@@ -196,17 +270,12 @@ function MetricRow({
       }
       onMouseLeave={(e) => (e.currentTarget.style.background = "")}
     >
-      {/* Metric label */}
+      {/* Metric label + info icon */}
       <td className={`${cellBase} font-medium pl-5`} style={{ color: "#07290E" }}>
-        {metric.label}
-      </td>
-
-      {/* Calculation */}
-      <td
-        className={cellBase}
-        style={{ color: "rgba(7,41,14,0.5)", maxWidth: 220 }}
-      >
-        {metric.calculation}
+        <span className="inline-flex items-center">
+          {metric.label}
+          <InfoTooltip text={metric.calculation} />
+        </span>
       </td>
 
       {/* Last completed period */}
@@ -224,20 +293,20 @@ function MetricRow({
         ) : lastPt ? (
           <div>
             <div className="text-lg font-bold" style={{ color: "#07290E" }}>
-              {fmt(lastPt.value, metric.decimals)}
+              {fmt(lastPt.value, metric.decimals)}{sfx}
             </div>
             {pctChange !== null && (
               <div
                 className="text-xs font-medium mt-0.5"
                 style={{ color: pctChange >= 0 ? "#16a34a" : "#dc2626" }}
               >
-                {pctChange >= 0 ? "↑" : "↓"}{" "}
+                {pctChange >= 0 ? "\u2191" : "\u2193"}{" "}
                 {Math.abs(pctChange).toFixed(0)}%
               </div>
             )}
           </div>
         ) : (
-          <span style={{ color: "rgba(7,41,14,0.25)" }}>—</span>
+          <span style={{ color: "rgba(7,41,14,0.25)" }}>{"\u2014"}</span>
         )}
       </td>
 
@@ -254,14 +323,14 @@ function MetricRow({
         ) : current ? (
           <div>
             <div className="text-lg font-bold" style={{ color: "#07290E" }}>
-              {fmt(current.value, metric.decimals)}
+              {fmt(current.value, metric.decimals)}{sfx}
             </div>
             <div className="text-xs mt-0.5" style={{ color: "rgba(7,41,14,0.35)" }}>
               partial
             </div>
           </div>
         ) : (
-          <span style={{ color: "rgba(7,41,14,0.25)" }}>—</span>
+          <span style={{ color: "rgba(7,41,14,0.25)" }}>{"\u2014"}</span>
         )}
       </td>
 
@@ -276,7 +345,7 @@ function MetricRow({
             style={{ background: "rgba(7,41,14,0.06)" }}
           />
         ) : (
-          <Sparkline points={sparkPoints} />
+          <Sparkline points={sparkPoints} decimals={metric.decimals} suffix={metric.suffix} />
         )}
       </td>
     </tr>
@@ -298,6 +367,21 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
       allMetrics.map((m) => [m.id, { points: [], loading: true, error: null }])
     )
   );
+
+  // Collapsible sections — all expanded by default
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+
+  const toggleSection = (sectionId: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) {
+        next.delete(sectionId);
+      } else {
+        next.add(sectionId);
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     // Reset to loading when granularity changes
@@ -348,7 +432,7 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
   // Build card ID list for footer
   const cardIds = SECTIONS.map(
     (s) => `#${s.metrics.map((m) => m.cardId).join(", #")} (${s.label})`
-  ).join(" · ");
+  ).join(" \u00b7 ");
 
   return (
     <div
@@ -373,12 +457,6 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
                 className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide"
                 style={{ color: "rgba(7,41,14,0.4)", minWidth: 180 }}
               />
-              <th
-                className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide"
-                style={{ color: "rgba(7,41,14,0.4)", minWidth: 200 }}
-              >
-                Calculation
-              </th>
 
               {/* Last completed period */}
               <th
@@ -445,31 +523,44 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
           </thead>
 
           <tbody>
-            {SECTIONS.map((section) => (
-              <>
-                {/* Section header */}
-                <tr key={`header-${section.id}`} style={{ background: "#374151" }}>
-                  <td
-                    colSpan={5}
-                    className="px-5 py-2.5 text-xs font-semibold tracking-wide uppercase"
-                    style={{ color: "#fff" }}
+            {SECTIONS.map((section) => {
+              const isCollapsed = collapsedSections.has(section.id);
+              return (
+                <React.Fragment key={section.id}>
+                  {/* Section header — clickable to toggle */}
+                  <tr
+                    style={{ background: "#374151", cursor: "pointer" }}
+                    onClick={() => toggleSection(section.id)}
                   >
-                    ▼ {section.label}
-                  </td>
-                </tr>
+                    <td
+                      colSpan={4}
+                      className="px-5 py-2.5 text-xs font-semibold tracking-wide uppercase select-none"
+                      style={{ color: "#fff" }}
+                    >
+                      <span
+                        className="inline-block transition-transform duration-200 mr-1"
+                        style={{ transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)" }}
+                      >
+                        {"\u25BC"}
+                      </span>
+                      {section.label}
+                    </td>
+                  </tr>
 
-                {/* Metric rows */}
-                {section.metrics.map((metric) => (
-                  <MetricRow
-                    key={metric.id}
-                    metric={metric}
-                    state={metricStates[metric.id]}
-                    granularity={granularity}
-                    periodCount={SPARK_COUNT}
-                  />
-                ))}
-              </>
-            ))}
+                  {/* Metric rows — hidden when collapsed */}
+                  {!isCollapsed &&
+                    section.metrics.map((metric) => (
+                      <MetricRow
+                        key={metric.id}
+                        metric={metric}
+                        state={metricStates[metric.id]}
+                        granularity={granularity}
+                        periodCount={SPARK_COUNT}
+                      />
+                    ))}
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -483,7 +574,7 @@ export default function MetricsTable({ granularity }: { granularity: Granularity
           color: "rgba(7,41,14,0.35)",
         }}
       >
-        All times UTC · {granularity === "day" ? "Daily view" : granularity === "week" ? "Week starts Monday" : "Monthly view"} ·
+        All times UTC &middot; {granularity === "day" ? "Daily view" : granularity === "week" ? "Week starts Monday" : "Monthly view"} &middot;
         Source: Metabase cards {cardIds}
       </div>
     </div>

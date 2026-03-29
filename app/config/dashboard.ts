@@ -21,10 +21,11 @@
  * │     {                                                           │
  * │       id: "unique_id",         // any unique string             │
  * │       label: "Display name",   // shown in the table            │
- * │       calculation: "How...",   // short description             │
+ * │       calculation: "How...",   // tooltip on hover (info icon)  │
  * │       cardId: 66,              // from step 2                   │
  * │       valueKey: "column_name", // the value column name in SQL  │
  * │       decimals: 0,             // 0 = integer, 1 = 0.0, etc.   │
+ * │       suffix: "%",            // optional — appended to values  │
  * │     }                                                           │
  * │                                                                 │
  * │  That's it. No other files need editing.                        │
@@ -49,7 +50,7 @@ export interface MetricConfig {
   id: string;
   /** Display label shown in the table row */
   label: string;
-  /** Short description of how this metric is calculated */
+  /** Short description shown on hover via info icon */
   calculation: string;
   /** Metabase card ID — the number from the question URL */
   cardId: number;
@@ -57,6 +58,8 @@ export interface MetricConfig {
   valueKey: string;
   /** Decimal places for display (0 = integer, 1 = 0.0, 2 = 0.00) */
   decimals: number;
+  /** Optional suffix appended after values, e.g. "%" */
+  suffix?: string;
 }
 
 export interface SectionConfig {
@@ -165,6 +168,7 @@ export const SECTIONS: SectionConfig[] = [
         cardId: 79,
         valueKey: "avg_soc_in",
         decimals: 1,
+        suffix: "%",
       },
       {
         id: "avg_soc_out",
@@ -173,6 +177,7 @@ export const SECTIONS: SectionConfig[] = [
         cardId: 78,
         valueKey: "avg_soc_out",
         decimals: 1,
+        suffix: "%",
       },
     ],
   },
